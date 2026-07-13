@@ -175,7 +175,10 @@ export function ClientOrbit() {
             ))}
           </div>
         ) : (
-          <div className="flex justify-center" style={{ perspective: 1100 }}>
+          <div
+            className="flex justify-center max-sm:scale-[0.82]"
+            style={{ perspective: 1100 }}
+          >
             <div className="orbit-y preserve-3d relative h-44 w-64">
               {clients.map((client, i) => (
                 <div

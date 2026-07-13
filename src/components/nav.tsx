@@ -48,7 +48,7 @@ export function Nav() {
             CTA — so it stays dead centre regardless of how wide either of
             those end up (the logo wordmark and "Request a quote" are not
             the same width). */}
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 lg:flex xl:gap-8">
           {nav.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
@@ -71,16 +71,20 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center justify-end gap-4">
-          <PillCTA href="/contact" size="sm" className="hidden md:inline-flex">
-            Request a quote
-          </PillCTA>
+          {/* Wrapped: PillCTA sets `inline-flex` on itself, which outranks a
+              `hidden` passed alongside it — hiding the wrapper is reliable. */}
+          <div className="hidden lg:block">
+            <PillCTA href="/contact" size="sm">
+              Request a quote
+            </PillCTA>
+          </div>
 
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? 'Close menu' : 'Open menu'}
-            className="tap flex size-11 flex-col items-center justify-center gap-1.5 md:hidden"
+            className="tap flex size-11 flex-col items-center justify-center gap-1.5 lg:hidden"
           >
             <span
               className={`h-px w-5 bg-ink transition-transform duration-300 ${
@@ -103,7 +107,7 @@ export function Nav() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-hairline bg-paper md:hidden"
+            className="overflow-hidden border-t border-hairline bg-paper lg:hidden"
           >
             <div className="flex flex-col px-6 py-4">
               {nav.map((item) => (

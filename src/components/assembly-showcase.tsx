@@ -139,7 +139,7 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
         <dl className="mt-7">
           {facts.map(([label, value], i) => (
             <Block key={label} p={p} window={[0.28 + i * 0.09, 0.46 + i * 0.09]}>
-              <div className="rule-top flex items-baseline justify-between gap-6 py-3.5">
+              <div className="rule-top flex items-baseline justify-between gap-6 py-2.5 lg:py-3.5">
                 <dt className="spec">{label}</dt>
                 <dd className="text-right text-sm font-medium text-ink">{value}</dd>
               </div>
@@ -148,12 +148,12 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
         </dl>
 
         <Block p={p} window={[0.56, 0.76]}>
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-graphite md:text-base">
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-graphite max-lg:line-clamp-3 lg:mt-6 lg:text-base">
             {item.story}
           </p>
         </Block>
 
-        <Block p={p} window={[0.68, 0.86]} className="mt-7 flex flex-wrap items-center gap-4">
+        <Block p={p} window={[0.68, 0.86]} className="mt-5 flex flex-wrap items-center gap-4 lg:mt-7">
           <Magnetic>
             <PillCTA href="/contact" size="sm">
               Request a piece like this
@@ -188,8 +188,8 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
 
   return (
     <section ref={wrapRef} aria-label={item.name} className="relative h-[220vh]">
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-        <div className="mx-auto grid w-full max-w-[1400px] items-center gap-10 px-6 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+      <div className="sticky top-0 flex h-screen items-center overflow-hidden py-8">
+        <div className="mx-auto grid w-full max-w-[1400px] items-center gap-6 px-6 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           {/* The piece, easing together. */}
           <motion.div style={{ scale: pieceScale }} className="relative" aria-hidden>
             <motion.div
@@ -197,7 +197,7 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
               className="absolute -inset-8 -z-10 rounded-[3rem] bg-scribe-wash blur-3xl"
             />
             <div
-              className="relative aspect-4/3 max-h-[42vh] w-full lg:max-h-none"
+              className="relative aspect-4/3 max-h-[32vh] w-full sm:max-h-[42vh] lg:max-h-none"
               style={{ perspective: 1200, transformStyle: 'preserve-3d' }}
             >
               {Array.from({ length: GRID * GRID }, (_, k) => (
