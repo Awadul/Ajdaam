@@ -1,0 +1,301 @@
+@import "tailwindcss";
+
+@theme {
+  /* A light, professional shop. One accent — the blue carried in the mark —
+     and two shades of it, over a cool white-and-slate ground. No second
+     hue: everything that needs to signal does it in the same blue, so the
+     page reads calm and considered rather than busy. */
+  --color-canvas: #ffffff; /* white — cards, surfaces, text over the dark */
+  --color-paper: #f5f7fb; /* the page itself: a cool off-white */
+  --color-wash: #eaf0fb; /* a soft blue-tinted panel */
+
+  --color-ink: #1b2434; /* body text: deep slate-navy */
+  --color-ink-deep: #0f1a2e; /* the dark wells: footer, CTA, feature bands */
+  --color-graphite: #5a6472; /* muted slate */
+  --color-hairline: #dde5f0; /* a fine cool border */
+
+  /* The punctuation marks share the accent, so nothing introduces a
+     second colour. */
+  --color-cut: #1b4fc7;
+  --color-cut-deep: #163f9e;
+
+  --color-scribe: #1b4fc7; /* the single accent: the mark's blue */
+  --color-scribe-wash: #dbe6fb; /* a light blue panel / chip */
+  --color-scribe-lift: color-mix(in oklab, #1b4fc7 55%, white);
+  --color-scribe-deep: color-mix(in oklab, #1b4fc7 80%, black);
+
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-spec: var(--font-mono), ui-monospace, monospace;
+
+  --ease-cut: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-wipe: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@layer base {
+  * {
+    @apply border-hairline;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-scribe);
+    color: var(--color-canvas);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-scribe);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Oversized display type, set tight. Headlines carry weight through size
+     and tracking; the blue accent is used sparingly, as punctuation. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+
+  .spec {
+    font-family: var(--font-spec);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-graphite);
+  }
+
+  .rule {
+    height: 1px;
+    background-color: var(--color-hairline);
+  }
+
+  .section-lead {
+    padding-block: 3rem 4rem;
+  }
+
+  .section {
+    padding-block: 4.5rem;
+  }
+
+  .section-tight {
+    padding-block: 3rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-lead {
+      padding-block: 4rem 5.5rem;
+    }
+
+    .section {
+      padding-block: 6rem;
+    }
+
+    .section-tight {
+      padding-block: 4.5rem;
+    }
+  }
+
+  /*
+    Fitts's law. A target that is easy to hit is a target that is big enough
+    to hit. 44px is the floor for anything a finger has to land on.
+  */
+  .tap {
+    min-height: 44px;
+  }
+
+  /* The nav's own entrance: fades and drops in once, on first paint. Named
+     after the equivalent on octane8.com, where this curve first came from. */
+  .nav-in {
+    animation: nav-in 0.7s var(--ease-cut) both;
+  }
+}
+
+@keyframes nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The tool-head cursor is live: hide the native arrow everywhere except
+   where the component has already stepped aside (text fields keep their
+   caret because the class is removed there). */
+.tool-cursor,
+.tool-cursor * {
+  cursor: none !important;
+}
+
+/* Soft rules. Hard 1px borders read as furniture; these are the same
+   hairline dissolving to nothing at both ends, so sections breathe into
+   each other instead of being boxed apart. */
+.rule-soft {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-hairline) 18%,
+    var(--color-hairline) 82%,
+    transparent
+  );
+}
+
+/* The same gesture as a background, for elements that used `border-t`. */
+.rule-top {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    var(--color-hairline) 18%,
+    var(--color-hairline) 82%,
+    transparent
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top;
+}
+
+.rule-top-dark {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgb(255 255 255 / 0.14) 18%,
+    rgb(255 255 255 / 0.14) 82%,
+    transparent
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top;
+}
+
+/* The tick. The old square dot everywhere is now a pilot light: a soft
+   round point with a breathing glow — the machine is on. */
+.tick {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--color-scribe);
+  animation: tick-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes tick-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px color-mix(in oklab, var(--color-scribe) 14%, transparent),
+      0 0 10px color-mix(in oklab, var(--color-scribe) 45%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px color-mix(in oklab, var(--color-scribe) 9%, transparent),
+      0 0 18px color-mix(in oklab, var(--color-scribe) 75%, transparent);
+  }
+}
+
+/* The dash: a short toolpath stroke, for quote marks and small accents. */
+.dash {
+  height: 3px;
+  width: 1.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-scribe),
+    color-mix(in oklab, var(--color-scribe) 25%, transparent)
+  );
+}
+
+/* 3D helpers for the lower page: everything below the hero runs in real
+   perspective — the client ring, the material drum, the tilt cards. */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* The client ring: six names on a slowly turning carousel. */
+@keyframes orbit-y {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(-360deg);
+  }
+}
+
+.orbit-y {
+  animation: orbit-y 30s linear infinite;
+}
+
+/* The scroll coin on the hero: circular type turning at the speed of a
+   spindle winding down. */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+
+/* The service row band. Only runs while the row is hovered or focused, so a
+   still page stays still. */
+@keyframes slide-slow {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.band-track {
+  animation: slide-slow 22s linear infinite;
+  animation-play-state: paused;
+}
+
+.band:hover .band-track,
+.band:focus-visible .band-track,
+.band:focus-within .band-track {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .band-track,
+  .spin-slow,
+  .orbit-y,
+  .tick {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
