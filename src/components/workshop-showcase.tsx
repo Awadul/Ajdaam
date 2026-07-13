@@ -7,9 +7,9 @@ import {
   AnimatePresence,
   motion,
   useInView,
-  useMotionValueEvent,
   useReducedMotion,
   useScroll,
+  useTransform,
 } from 'framer-motion';
 import { materials, services } from '@/lib/site';
 import { projects } from '@/lib/projects';
@@ -85,12 +85,13 @@ const outputs = [
  * one photo. Everything the old spec table repeated is gone — each item is
  * a name in the list, a chip and one line on the plate, nothing twice.
  *
- * The scroll-stopper: on desktop the band pins for a few viewport heights
- * and the scroll itself becomes the dial — each turn of the wheel indexes
- * the list forward one item, the way the drum used to step, so a reader
- * can't pass the section without walking through what the shop does.
- * On mobile (and for reduced motion) nothing pins: the section flows and a
- * quiet timer does the indexing instead.
+ * No pin, no hijack: the section earns the stop instead of enforcing it.
+ * While it's on screen it runs itself — the highlight glides down the list,
+ * the plate photo turns over, and a hairline counts each item's turn across
+ * the plate's top edge — peripheral motion that makes a scrolling eye pause
+ * of its own accord. A hand anywhere on the band pauses the cycle; hover,
+ * click, tabs and dots take over instantly. The plate also drifts gently
+ * against the page as the band passes: a depth cue, not a hold.
  */
 export function WorkshopShowcase() {
   const wrapRef = useRef<HTMLElement>(null);
@@ -100,18 +101,6 @@ export function WorkshopShowcase() {
   const [modeIdx, setModeIdx] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
   const [engaged, setEngaged] = useState(false);
-  // Hand on the list: the pointer owns the selection and the scroll dial
-  // waits, so hover and scroll never fight over the highlight.
-  const [handOn, setHandOn] = useState(false);
-  const [isLg, setIsLg] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const update = () => setIsLg(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
 
   const modes = [
     {
@@ -160,23 +149,22 @@ export function WorkshopShowcase() {
   const currentItem = itemsList[activeIdx] || itemsList[0];
   const count = itemsList.length;
 
-  /* Desktop: the scroll is the dial. The pinned wrapper's progress maps to
-     the item index; the last 8% is slack so the final item gets a beat
-     before the band releases. */
-  const { scrollYProgress } = useScroll({ target: wrapRef, offset: ['start start', 'end end'] });
+  /* No pin, no hijack. The section runs itself while it's on screen — the
+     gliding highlight and the turning photo are the peripheral motion that
+     stops a scrolling eye — and a hand anywhere on the band pauses it. */
+  const running = !reduced && !engaged && inView;
 
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    if (!isLg || handOn) return;
-    const n = Math.min(count - 1, Math.max(0, Math.floor((v / 0.92) * count)));
-    setActiveIdx(n);
-  });
-
-  /* Mobile: a quiet timer does the indexing. */
   useEffect(() => {
-    if (reduced || engaged || !inView || isLg) return;
+    if (!running) return;
     const timer = setInterval(() => setActiveIdx((v) => (v + 1) % count), 3400);
     return () => clearInterval(timer);
-  }, [reduced, engaged, inView, isLg, count]);
+  }, [running, count]);
+
+  /* A gentle depth cue while the page moves: the plate drifts against the
+     scroll, the way the sticky spec plate on a bench stays put while the
+     bench rolls. */
+  const { scrollYProgress } = useScroll({ target: wrapRef, offset: ['start end', 'end start'] });
+  const plateY = useTransform(scrollYProgress, [0, 1], [30, -30]);
 
   const selectMode = (idx: number) => {
     setModeIdx(idx);
@@ -185,9 +173,9 @@ export function WorkshopShowcase() {
   };
 
   return (
-    <section ref={wrapRef} aria-label="Workshop Showcase" className="lg:h-[220vh]">
+    <section ref={wrapRef} aria-label="Workshop Showcase">
       <div
-        className="overflow-hidden bg-ink-deep py-14 text-canvas md:py-20 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-center lg:pb-8 lg:pt-24"
+        className="overflow-hidden bg-ink-deep py-14 text-canvas md:py-20"
         onMouseEnter={() => setEngaged(true)}
         onMouseLeave={() => setEngaged(false)}
       >
@@ -237,11 +225,10 @@ export function WorkshopShowcase() {
             <motion.div
               key={currentMode.id}
               initial={reduced ? false : 'hidden'}
-              animate="show"
+              whileInView="show"
+              viewport={{ once: true, margin: '-80px' }}
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
               style={{ perspective: 900 }}
-              onMouseEnter={() => setHandOn(true)}
-              onMouseLeave={() => setHandOn(false)}
             >
               {itemsList.map((item, i) => {
                 const on = activeIdx === i;
@@ -351,15 +338,28 @@ export function WorkshopShowcase() {
             </motion.div>
 
             {/* The plate: one photo, one chip, one line — and the door to
-                the item it's showing. */}
+                the item it's showing. It drifts gently against the page as
+                the band passes, a depth cue rather than a hold. */}
             <FlipIn className="hidden lg:block">
-              <Tilt3D max={6} className="h-full" innerClassName="rounded-3xl">
-                <Link
-                  href={currentItem.href}
-                  aria-label={`${currentItem.name} — know more`}
-                  className="group/plate relative flex h-full min-h-[380px] flex-col overflow-hidden rounded-3xl bg-ink/40 shadow-[0_24px_56px_rgba(0,0,0,0.45)] backdrop-blur-md"
-                >
-                  <div className="relative flex-1 overflow-hidden bg-ink/30">
+              <motion.div style={reduced ? undefined : { y: plateY }} className="h-full">
+                <Tilt3D max={6} className="h-full" innerClassName="rounded-3xl">
+                  <Link
+                    href={currentItem.href}
+                    aria-label={`${currentItem.name} — know more`}
+                    className="group/plate relative flex h-full min-h-[380px] flex-col overflow-hidden rounded-3xl bg-ink/40 shadow-[0_24px_56px_rgba(0,0,0,0.45)] backdrop-blur-md"
+                  >
+                    {/* The heartbeat: each item's turn, drawn across the top
+                        edge — visibly live until a hand lands on the band. */}
+                    {running && (
+                      <motion.div
+                        key={`${modeIdx}-${activeIdx}`}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 3.4, ease: 'linear' }}
+                        className="absolute inset-x-0 top-0 z-20 h-0.5 origin-left bg-scribe/80 shadow-[0_0_10px_rgba(27,79,199,0.6)]"
+                      />
+                    )}
+                    <div className="relative flex-1 overflow-hidden bg-ink/30">
                     {itemsList.map((item, i) => {
                       const proj = projects.find((p) => p.id === item.projectId);
                       // Only the active item and its two neighbours are
@@ -409,7 +409,8 @@ export function WorkshopShowcase() {
                     </motion.div>
                   </div>
                 </Link>
-              </Tilt3D>
+                </Tilt3D>
+              </motion.div>
             </FlipIn>
           </div>
         </div>

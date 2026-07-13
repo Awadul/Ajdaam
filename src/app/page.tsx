@@ -16,8 +16,9 @@ import { WorkshopShowcase } from '@/components/workshop-showcase';
  *
  *   1. CinemaHero        — entrance choreography: type rises, footage unclips.
  *   2. ClientOrbit       — CSS 3D: the roster turning on a slow carousel.
- *   3. WorkshopShowcase  — the console: Methods / Stock / Outputs, pinned,
- *                          the scroll indexing through the items.
+ *   3. WorkshopShowcase  — the console: Methods / Stock / Outputs, free-
+ *                          scrolling and self-running; motion earns the
+ *                          stop instead of a pin enforcing it.
  *   4. AuthorityPanorama — light interlude: the one-roof claim inks in
  *                          word by word on scroll, photo as one tilt card.
  *   5. CapabilityDeck    — tilt cards with figures standing off the face;

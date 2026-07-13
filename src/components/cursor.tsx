@@ -40,15 +40,11 @@ export function ToolCursor() {
   useEffect(() => {
     if (!enabled) return;
 
-    const onMove = (e: PointerEvent) => {
-      x.set(e.clientX);
-      y.set(e.clientY);
-      setSeen(true);
-    };
+    let lastEl: Element | null = null;
+    let raf = 0;
 
-    const onOver = (e: Event) => {
-      const target = e.target as Element | null;
-      if (!target || !(target instanceof Element)) return;
+    const detect = (target: Element | null) => {
+      if (!target) return;
       if (target.closest('input, textarea, select, [contenteditable="true"]')) {
         setMode('native');
       } else if (target.closest('a, button, [role="button"], summary, label')) {
@@ -58,19 +54,143 @@ export function ToolCursor() {
       }
     };
 
+    const onMove = (e: PointerEvent) => {
+      x.set(e.clientX);
+      y.set(e.clientY);
+      setSeen(true);
+    };
+
+    const onOver = (e: Event) => {
+      const target = e.target as Element | null;
+      if (!target || !(target instanceof Element)) return;
+      lastEl = target;
+      detect(target);
+    };
+
+    /* The page is alive under a still hand: browsers leave hover stale
+       while scrolling, so while the page moves we look up what has slid
+       under the resting cursor and hand it the full event vocabulary a
+       real pointer would produce — pointer + mouse, bubbling over/out
+       pairs (what React's delegation synthesizes enter/leave from) and
+       non-bubbling enter/leave walked along the real ancestor chains
+       (what native listeners want). */
+    const ancestors = (node: Element | null) => {
+      const chain: Element[] = [];
+      let n: Element | null = node;
+      while (n) {
+        chain.push(n);
+        n = n.parentElement;
+      }
+      return chain;
+    };
+
+    const fire = (
+      target: Element,
+      type: string,
+      bubbles: boolean,
+      cx: number,
+      cy: number,
+      related: Element | null,
+    ) => {
+      const pointer = type.startsWith('pointer');
+      const Ctor = pointer && typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
+      target.dispatchEvent(
+        new Ctor(type, {
+          bubbles,
+          cancelable: true,
+          view: window,
+          clientX: cx,
+          clientY: cy,
+          relatedTarget: related,
+          ...(pointer ? { pointerId: 1, pointerType: 'mouse', isPrimary: true } : {}),
+        } as PointerEventInit),
+      );
+    };
+
+    const syncUnderCursor = () => {
+      const cx = x.get();
+      const cy = y.get();
+      if (cx < 0 || cy < 0) return;
+
+      const el = document.elementFromPoint(cx, cy);
+      if (!el) return;
+
+      detect(el);
+
+      if (el !== lastEl) {
+        const fromChain = ancestors(lastEl);
+        const toChain = ancestors(el);
+        const fromSet = new Set(fromChain);
+        const common = toChain.find((n) => fromSet.has(n)) ?? null;
+
+        // Out of the old target: bubbling out pair, then leave up the chain.
+        if (lastEl) {
+          fire(lastEl, 'pointerout', true, cx, cy, el);
+          fire(lastEl, 'mouseout', true, cx, cy, el);
+          for (const n of fromChain) {
+            if (n === common) break;
+            fire(n, 'pointerleave', false, cx, cy, el);
+            fire(n, 'mouseleave', false, cx, cy, el);
+          }
+        }
+
+        // Into the new one: bubbling over pair, then enter down the chain.
+        fire(el, 'pointerover', true, cx, cy, lastEl);
+        fire(el, 'mouseover', true, cx, cy, lastEl);
+        const entering: Element[] = [];
+        for (const n of toChain) {
+          if (n === common) break;
+          entering.push(n);
+        }
+        for (const n of entering.reverse()) {
+          fire(n, 'pointerenter', false, cx, cy, lastEl);
+          fire(n, 'mouseenter', false, cx, cy, lastEl);
+        }
+
+        lastEl = el;
+      }
+
+      // Always a move: elements sliding under the pointer keep reacting
+      // (tilt, magnetism) even when the target hasn't changed.
+      fire(el, 'pointermove', true, cx, cy, null);
+      fire(el, 'mousemove', true, cx, cy, null);
+    };
+
+    /* Run while scrolling and briefly after, so momentum is covered too. */
+    let lastScrollAt = 0;
+    const loop = () => {
+      syncUnderCursor();
+      if (performance.now() - lastScrollAt < 200) {
+        raf = requestAnimationFrame(loop);
+      } else {
+        raf = 0;
+      }
+    };
+
+    const onScroll = () => {
+      lastScrollAt = performance.now();
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+
     const onDown = () => setPressed(true);
     const onUp = () => setPressed(false);
     const onLeave = () => setSeen(false);
 
     window.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerover', onOver, true);
+    // Capture-phase so scrolls inside nested scrollers count too.
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('wheel', onScroll, { passive: true });
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUp);
     document.documentElement.addEventListener('pointerleave', onLeave);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerover', onOver, true);
+      window.removeEventListener('scroll', onScroll, { capture: true } as EventListenerOptions);
+      window.removeEventListener('wheel', onScroll);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
       document.documentElement.removeEventListener('pointerleave', onLeave);
