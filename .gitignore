@@ -3,5 +3,5 @@ node_modules
 out
 .env*
 !.env.example
-public/media/*
+# public/media/*
 !public/media/.gitkeep
