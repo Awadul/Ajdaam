@@ -135,7 +135,7 @@ export function SpinBadge({ className = '' }: { className?: string }) {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '8.2px',
-                letterSpacing: '0.22em',
+                letterSpacing: '0.15em',
                 textTransform: 'uppercase',
               }}
             >

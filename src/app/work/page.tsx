@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { WorkGrid } from './work-grid';
-import { CallToAction, Eyebrow } from '@/components/ui';
+import { WorkStream } from '@/components/work-stream';
+import { CallToAction } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Work',
@@ -18,12 +19,19 @@ export default function WorkPage() {
           was cut to order
         </h1>
         <p className="mt-8 max-w-xl text-lg leading-relaxed text-graphite">
-          Signage, panels, furniture, fitouts and one off pieces. Filter by what you are after, or
-          scroll through all of it.
+          Signage, panels, furniture, fitouts and one off pieces. Walk the reel, or filter the
+          full catalogue below.
         </p>
       </section>
 
-      <WorkGrid />
+      {/* The library: every piece assembling itself as the scroll carries
+          it into view — shards, slats and deep swings taking turns. */}
+      <WorkStream />
+
+      {/* The catalogue, for finding rather than wandering. */}
+      <div className="mt-24 md:mt-36">
+        <WorkGrid />
+      </div>
 
       <div className="h-32 md:h-48" />
       <CallToAction />

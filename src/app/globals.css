@@ -74,7 +74,7 @@
   .spec {
     font-family: var(--font-spec);
     font-size: 0.6875rem;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--color-graphite);
   }

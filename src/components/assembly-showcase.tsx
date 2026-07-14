@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import {
   motion,
@@ -32,15 +32,17 @@ function Shard({ p, k, src }: { p: MotionValue<number>; k: number; src: string }
   const row = Math.floor(k / GRID);
   const col = k % GRID;
 
-  // Modest, deterministic scatter with per-shard timing offsets.
+  // Modest, deterministic scatter with per-shard timing offsets. The piece
+  // is whole by the pin's midpoint — the second half of the scroll belongs
+  // to the move aside and the spec sheet.
   const jitterX = ((k * 37) % 16) - 8;
   const jitterY = ((k * 53) % 16) - 8;
-  const start = 0.05 + ((k * 7) % 5) * 0.03;
+  const start = 0.03 + ((k * 7) % 5) * 0.022;
 
-  const x = useTransform(p, [start, 0.72], [`${(col - 1) * 34 + jitterX}%`, '0%']);
-  const y = useTransform(p, [start, 0.72], [`${(row - 1) * 30 + jitterY}%`, '0%']);
-  const rotate = useTransform(p, [start, 0.72], [((k * 97) % 28) - 14, 0]);
-  const z = useTransform(p, [start, 0.72], [((k * 29) % 180) - 90, 0]);
+  const x = useTransform(p, [start, 0.5], [`${(col - 1) * 34 + jitterX}%`, '0%']);
+  const y = useTransform(p, [start, 0.5], [`${(row - 1) * 30 + jitterY}%`, '0%']);
+  const rotate = useTransform(p, [start, 0.5], [((k * 97) % 28) - 14, 0]);
+  const z = useTransform(p, [start, 0.5], [((k * 29) % 180) - 90, 0]);
 
   const cell = 100 / GRID;
   const clipPath = `inset(${row * cell}% ${(GRID - 1 - col) * cell}% ${(GRID - 1 - row) * cell}% ${col * cell}%)`;
@@ -89,24 +91,36 @@ function InfoReveal({
 /* ------------------------------------------------------------------ */
 
 /**
- * One product, assembled by the reader — photo on one side, a proper spec
- * sheet beside it, nothing printed over the image. The section pins and
- * everything builds progressively with the scroll: the shards drift home
- * over most of the pin while the piece eases up from 92% scale, and the
- * spec column fills in row by row alongside it — name first, then the
- * facts, then the story, then the ask. No instruction line; the response
- * to the first turn of the wheel is the instruction.
+ * One product, assembled by the reader, in two acts. Act one: the shards
+ * drift together centre-stage — the piece has the whole room while it's
+ * being made. Act two: whole, it glides into its left column and the spec
+ * sheet steps in from the right, row by row — name, facts, story, ask.
+ * Nothing is ever printed over the image, and no instruction line is
+ * needed; the response to the first turn of the wheel is the instruction.
  */
 export function AssemblyHero({ item }: { item: ShowcaseItem }) {
   const wrapRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  const [isLg, setIsLg] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const update = () => setIsLg(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const { scrollYProgress } = useScroll({ target: wrapRef, offset: ['start start', 'end end'] });
   const p = useSpring(scrollYProgress, { stiffness: 60, damping: 22, mass: 0.6 });
 
-  // The piece grows into place across most of the pin — no jump cut.
-  const pieceScale = useTransform(p, [0, 0.8], [0.92, 1]);
-  const shadowOpacity = useTransform(p, [0.25, 0.8], [0, 1]);
+  /* Act one: the piece assembles centre-stage. Act two: whole, it glides
+     into its left column and the spec sheet steps in from the right. */
+  const pieceScale = useTransform(p, [0, 0.5], [0.94, 1]);
+  const shadowOpacity = useTransform(p, [0.2, 0.5], [0, 1]);
+  // 42% of the image's own width ≈ the offset from column centre to
+  // container centre in the 1.05fr/0.95fr grid.
+  const slideX = useTransform(p, [0.52, 0.74], ['42%', '0%']);
 
   const project = projects.find((pr) => pr.id === item.projectId)!;
   const src = project.media[0].src;
@@ -132,13 +146,13 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
 
     return (
       <div>
-        <Block p={p} window={[0.08, 0.3]}>
+        <Block p={p} window={[0.58, 0.72]}>
           <h2 className="display text-[clamp(1.7rem,3.4vw,2.8rem)]">{item.name}</h2>
         </Block>
 
         <dl className="mt-7">
           {facts.map(([label, value], i) => (
-            <Block key={label} p={p} window={[0.28 + i * 0.09, 0.46 + i * 0.09]}>
+            <Block key={label} p={p} window={[0.64 + i * 0.05, 0.76 + i * 0.05]}>
               <div className="rule-top flex items-baseline justify-between gap-6 py-2.5 lg:py-3.5">
                 <dt className="spec">{label}</dt>
                 <dd className="text-right text-sm font-medium text-ink">{value}</dd>
@@ -147,13 +161,13 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
           ))}
         </dl>
 
-        <Block p={p} window={[0.56, 0.76]}>
+        <Block p={p} window={[0.78, 0.9]}>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-graphite max-lg:line-clamp-3 lg:mt-6 lg:text-base">
             {item.story}
           </p>
         </Block>
 
-        <Block p={p} window={[0.68, 0.86]} className="mt-5 flex flex-wrap items-center gap-4 lg:mt-7">
+        <Block p={p} window={[0.84, 0.96]} className="mt-5 flex flex-wrap items-center gap-4 lg:mt-7">
           <Magnetic>
             <PillCTA href="/contact" size="sm">
               Request a piece like this
@@ -191,7 +205,11 @@ export function AssemblyHero({ item }: { item: ShowcaseItem }) {
       <div className="sticky top-0 flex h-screen items-center overflow-hidden py-8">
         <div className="mx-auto grid w-full max-w-[1400px] items-center gap-6 px-6 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           {/* The piece, easing together. */}
-          <motion.div style={{ scale: pieceScale }} className="relative" aria-hidden>
+          <motion.div
+            style={{ scale: pieceScale, x: isLg ? slideX : 0 }}
+            className="relative"
+            aria-hidden
+          >
             <motion.div
               style={{ opacity: shadowOpacity }}
               className="absolute -inset-8 -z-10 rounded-[3rem] bg-scribe-wash blur-3xl"
